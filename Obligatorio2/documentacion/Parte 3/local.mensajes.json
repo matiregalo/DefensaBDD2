@@ -1,0 +1,169 @@
+[
+  {
+    "_id": { "$oid": "690a0569b225368faaaeb001" },
+    "chat_id": "PARTIDA_URU_2025_FINAL",
+    "timestamp": { "$date": "2025-11-21T19:15:00Z" },
+    "tipo_mensaje": "publico",
+    "remitente_alias": "Seba",
+    "destinatario_alias": null,
+    "contenido": {
+      "tipo": "texto",
+      "texto": "Buenas gente! 👋 ¿Alguien para armar alianza en la zona del Puerto? Tengo recursos de sobra.",
+      "emojis": ["👋", "⚓"]
+    },
+    "interacciones": {
+      "likes_usuarios": ["Nacho", "Mati"],
+      "denuncias": []
+    },
+    "estado": "activo"
+  },
+
+  {
+    "_id": { "$oid": "690a0569b225368faaaeb002" },
+    "chat_id": "PARTIDA_URU_2025_FINAL",
+    "timestamp": { "$date": "2025-11-21T19:16:30Z" },
+    "tipo_mensaje": "privado",
+    "remitente_alias": "Nacho",
+    "destinatario_alias": "Seba",
+    "contenido": {
+      "tipo": "propuesta_comercio",
+      "texto": "Bo, te cambio 500 de madera por 200 de hierro. Me falta para terminar la muralla.",
+      "propuesta_comercio": {
+        "recursos_ofrecidos": [
+          {
+            "id_recurso": 1,
+            "nombre": "madera",
+            "cantidad": 500,
+            "valor_estimado": 5000,
+            "transporte": "caravana"
+          }
+        ],
+        "recursos_solicitados": [
+          {
+            "id_recurso": 2,
+            "nombre": "hierro",
+            "cantidad": 200,
+            "valor_estimado": 4000,
+            "transporte": "caravana"
+          }
+        ],
+        "medio_transporte": "caravana",
+        "validez_turnos": 3
+      },
+      "emojis": []
+    },
+    "interacciones": {
+      "likes_usuarios": [],
+      "denuncias": []
+    },
+    "estado": "activo"
+  },
+
+  {
+    "_id": { "$oid": "690a0569b225368faaaeb003" },
+    "chat_id": "PARTIDA_URU_2025_FINAL",
+    "timestamp": { "$date": "2025-11-21T19:18:00Z" },
+    "tipo_mensaje": "publico",
+    "remitente_alias": "Facu",
+    "destinatario_alias": null,
+    "contenido": {
+      "tipo": "accion_juego",
+      "texto": "Ha comenzado la construcción del Palacio Salvo 🏢",
+      "accion_juego": {
+        "tipo_accion": "construccion_maravilla",
+        "nombre_construccion": "Palacio Salvo",
+        "detalle_extra": "",
+        "costo_total": 5000
+      },
+      "emojis": ["🏢", "🏗️"]
+    },
+    "interacciones": {
+      "likes_usuarios": ["Seba", "Nacho"],
+      "denuncias": []
+    },
+    "estado": "activo"
+  },
+
+  {
+    "_id": { "$oid": "690a0569b225368faaaeb004" },
+    "chat_id": "PARTIDA_URU_2025_FINAL",
+    "timestamp": { "$date": "2025-11-21T19:20:15Z" },
+    "tipo_mensaje": "publico",
+    "remitente_alias": "Mati",
+    "destinatario_alias": null,
+    "contenido": {
+      "tipo": "texto",
+      "texto": "[CONTENIDO ELIMINADO POR ADMIN]",
+      "texto_original_hash": "xxx_insultos_xxx"
+    },
+    "interacciones": {
+      "likes_usuarios": [],
+      "denuncias": [
+        {
+          "por_alias": "Seba",
+          "motivo": "lenguaje_ofensivo",
+          "timestamp": { "$date": "2025-11-21T19:20:16Z" }
+        },
+        {
+          "por_alias": "Nacho",
+          "motivo": "toxico",
+          "timestamp": { "$date": "2025-11-21T19:20:17Z" }
+        }
+      ]
+    },
+    "estado": "moderado",
+    "moderacion": {
+      "fecha_moderacion": { "$date": "2025-11-21T19:20:30Z" },
+      "moderador_alias": "ADMIN",
+      "razon": "lenguaje_ofensivo",
+      "accion_tomada": "silenciar_usuario",
+      "sancion_aplicada": {
+        "tipo": "silencio_temporal",
+        "duracion_silencio": 30
+      }
+    }
+  },
+
+  {
+    "_id": { "$oid": "690a0569b225368faaaeb005" },
+    "chat_id": "PARTIDA_URU_2025_FINAL",
+    "timestamp": { "$date": "2025-11-21T19:25:00Z" },
+    "tipo_mensaje": "publico",
+    "remitente_alias": "Seba",
+    "destinatario_alias": null,
+    "contenido": {
+      "tipo": "estrategia_compartida",
+      "texto": "Gurises, ojo que vienen barcos por el sur. Hay que reforzar la defensa costera ya.",
+      "estrategia_compartida": {
+        "objetivos_finales": ["defensa_costera", "reaccion_urgente"],
+        "turnos": 1,
+        "observaciones": "ataque_naval detectado"
+      },
+      "emojis": ["⚠️", "⛵"]
+    },
+    "interacciones": {
+      "likes_usuarios": ["Nacho", "Facu"],
+      "denuncias": []
+    },
+    "estado": "activo"
+  },
+
+  {
+    "_id": { "$oid": "690a0569b225368faaaeb006" },
+    "chat_id": "PARTIDA_URU_2025_FINAL",
+    "timestamp": { "$date": "2025-11-21T19:30:00Z" },
+    "tipo_mensaje": "privado",
+    "remitente_alias": "Seba",
+    "destinatario_alias": "Facu",
+    "contenido": {
+      "tipo": "texto",
+      "texto": "Che, tremendo lo del Palacio. Si precisás piedra avisame que me sobró del turno pasado.",
+      "emojis": ["👍"]
+    },
+    "interacciones": {
+      "likes_usuarios": ["Facu"],
+      "denuncias": []
+    },
+    "estado": "activo"
+  }
+]

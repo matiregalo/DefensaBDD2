@@ -1,0 +1,53 @@
+[
+    {
+      "_id": "PARTIDA_URU_2025_FINAL",
+      "fecha_creacion": { "$date": "2025-11-21T19:00:00Z" },
+      "configuracion": {
+        "permitir_mensajes_privados": true,
+        "moderacion_activa": true,
+        "max_caracteres_mensaje": 280,
+        "emojis_permitidos": true
+      },
+      "participantes": [
+        {
+          "alias": "Seba",
+          "fecha_union": { "$date": "2025-11-21T19:05:00Z" },
+          "activo": true,
+          "denuncias_recibidas": 0,
+          "mensajes_enviados": 12
+        },
+        {
+          "alias": "Nacho",
+          "fecha_union": { "$date": "2025-11-21T19:06:00Z" },
+          "activo": true,
+          "denuncias_recibidas": 0,
+          "mensajes_enviados": 8
+        },
+        {
+          "alias": "Facu",
+          "fecha_union": { "$date": "2025-11-21T19:07:00Z" },
+          "activo": true,
+          "denuncias_recibidas": 1,
+          "mensajes_enviados": 15
+        },
+        {
+          "alias": "Mati",
+          "fecha_union": { "$date": "2025-11-21T19:10:00Z" },
+          "activo": false,
+          "denuncias_recibidas": 5,
+          "mensajes_enviados": 3
+        }
+      ],
+      "estadisticas": {
+        "total_mensajes": 38,
+        "total_mensajes_publicos": 30,
+        "total_mensajes_privados": 8,
+        "total_likes": 45,
+        "total_denuncias": 5,
+        "ultimo_mensaje": { "$date": "2025-11-01T12:45:30Z" }
+      },
+      "version_esquema": "2.0",
+      "fecha_ultima_actualizacion": { "$date": "2025-11-01T12:45:30Z" }
+    }
+  ]
+  
