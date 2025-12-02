@@ -1,21 +1,6 @@
 -- =====================================================
 -- REQUERIMIENTO 2: REGISTRO DE TRUEQUE
 -- =====================================================
--- Este procedimiento registra un trueque (intercambio de recursos)
--- entre dos países, validando capacidad de transporte y disponibilidad
--- de recursos, y actualizando automáticamente las cantidades.
---
--- Parámetros de entrada:
---   - p_codigo_partida: Identificador de la partida
---   - p_id_pais_origen: País que envía el recurso origen
---   - p_id_pais_destino: País que envía el recurso destino
---   - p_id_medio_transporte: Medio de transporte utilizado
---   - p_id_pais_responsable: País responsable del traslado
---   - p_recurso_origen: Recurso que envía el país origen
---   - p_cantidad_origen: Cantidad del recurso origen
---   - p_recurso_destino: Recurso que envía el país destino
---   - p_cantidad_destino: Cantidad del recurso destino
---
 -- Lógica del procedimiento:
 --   1. Valida que la carga total no exceda la capacidad del transporte
 --   2. Valida que el país origen tenga suficiente recurso origen
@@ -29,9 +14,6 @@
 --   - ex_capacidad_excedida: La carga total excede la capacidad del transporte
 --   - ex_recurso_origen_insuficiente: El país origen no tiene recursos suficientes
 --   - ex_recurso_destino_insuficiente: El país destino no tiene recursos suficientes
---
--- Nota: El trigger trg_01_verificar_capacidad_comercio también valida
---       la capacidad, pero este procedimiento hace una validación previa.
 
 CREATE OR REPLACE PROCEDURE sp_registrar_trueque(
     p_codigo_partida         IN PARTIDA.codigo_partida%TYPE,
@@ -45,22 +27,18 @@ CREATE OR REPLACE PROCEDURE sp_registrar_trueque(
     p_cantidad_destino     IN NUMBER                       
 ) AS
     
-    -- Excepciones personalizadas para manejo de errores
     ex_capacidad_excedida EXCEPTION;
     ex_recurso_origen_insuficiente EXCEPTION;
     ex_recurso_destino_insuficiente EXCEPTION;
 
-    -- Variables para almacenar información del comercio
     v_id_comercio       COMERCIO.id_comercio%TYPE;
     v_capacidad_maxima  MEDIODETRANSPORTE.capacidad_carga_maxima%TYPE;
     v_carga_total       NUMBER := 0;
     
-    -- Variables auxiliares para crear recursos si no existen
     v_nombre            RECURSOS_PARTIDA.nombre%TYPE;
     v_limite_produccion RECURSOS_PARTIDA.limite_produccion%TYPE;
     v_tipo_recurso      RECURSOS_PARTIDA.tipo_recurso%TYPE;
     
-    -- Variables para validación de recursos disponibles
     v_cantidad_origen_disponible RECURSO.cantidad%TYPE;
     v_cantidad_destino_disponible RECURSO.cantidad%TYPE;
 BEGIN
