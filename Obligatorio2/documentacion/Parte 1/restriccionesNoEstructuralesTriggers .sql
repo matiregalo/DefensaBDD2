@@ -115,12 +115,6 @@ END;
 -- =====================================================
 -- RESTRICCIÓN 2: LÍMITE DE ALMACENAMIENTO
 -- =====================================================
--- Regla de negocio: Un país no puede almacenar más de 3 veces
--- el límite de producción de un recurso. Si se intenta exceder
--- este límite, se trunca automáticamente la cantidad.
---
--- Implementación: Trigger BEFORE UPDATE que se ejecuta cuando
--- se actualiza la cantidad de un recurso.
 --
 -- Lógica:
 --   1. Calcula el límite de almacenamiento como 3 * límite_producción
@@ -134,7 +128,6 @@ DECLARE
     v_limite_almacenamiento NUMBER(10);
     v_limite_produccion NUMBER(10);
 BEGIN
-    -- Obtiene el límite de producción del recurso
     SELECT limite_produccion
     INTO v_limite_produccion
     FROM RECURSOS_PARTIDA
@@ -156,30 +149,18 @@ BEGIN
     END IF;
 EXCEPTION
     WHEN NO_DATA_FOUND THEN
-        -- Si no existe el recurso en RECURSOS_PARTIDA, no se aplica límite
         NULL;
 END;
 /
 -- =====================================================
 -- RESTRICCIÓN 3: PRODUCCIÓN AUTOMÁTICA DE CONSTRUCCIONES
 -- =====================================================
--- Regla de negocio: Las construcciones de tipo "producción" (usinas,
--- represas, plantaciones) generan automáticamente recursos cada ronda
--- según la cantidad configurada en CONSTRUCCION_REGISTRO_PRODUCCION.
---
--- Implementación: Procedimiento almacenado que se ejecuta al finalizar
--- cada ronda para generar la producción automática de todas las construcciones.
---
 -- Lógica:
 --   1. Busca todas las construcciones de categoría "producción" en la partida
 --   2. Para cada construcción, genera la cantidad_por_ronda del recurso asociado
 --   3. Actualiza la cantidad del recurso en la tabla RECURSO
 --   4. Registra la producción en REGISTRO_RECURSO_RONDA para auditoría
 --   5. Evita duplicados verificando si ya se registró producción en esta ronda
---
--- Parámetros:
---   - p_codigo_partida: Identificador de la partida
---   - p_id_ronda: ID de la ronda actual
 
 CREATE OR REPLACE PROCEDURE proc_producir_construcciones(
     p_codigo_partida IN VARCHAR2,
@@ -201,7 +182,7 @@ CREATE OR REPLACE PROCEDURE proc_producir_construcciones(
         JOIN CONSTRUCCION_TIPO ct
           ON c.id_construccion_tipo = ct.id_construccion_tipo
         WHERE crp.codigo_partida = p_codigo_partida
-          AND ct.categoria       = 'produccion';  -- Solo construcciones de producción
+          AND ct.categoria       = 'produccion';  
 
 BEGIN
     -- Procesa cada construcción de producción
@@ -241,7 +222,6 @@ BEGIN
                   AND id_pais        = rec.id_pais
                   AND codigo_partida = rec.codigo_partida;
 
-                -- Registra la producción en el historial (para auditoría)
                 BEGIN
                     INSERT INTO REGISTRO_RECURSO_RONDA(
                         id_consumo_registro,
@@ -291,31 +271,18 @@ END;
 -- =====================================================
 -- RESTRICCIÓN 4: PRODUCCIÓN AUTOMÁTICA DE PBN
 -- =====================================================
--- Regla de negocio: Cada país produce automáticamente 10.000 unidades
--- de su Producto Bruto Nacional (PBN) cada 10 rondas (rondas 10, 20, 30, etc.).
--- El PBN es un recurso especial que representa la riqueza del país.
---
--- Implementación: Procedimiento almacenado que se ejecuta al finalizar
--- una ronda, pero solo procesa si es una ronda múltiplo de 10.
---
 -- Lógica:
 --   1. Verifica si la ronda actual es múltiplo de 10 (checkpoint)
 --   2. Si es checkpoint, busca todos los países con recurso PBN en la partida
 --   3. Para cada país, incrementa su PBN en 10.000 unidades
 --   4. Registra la producción en REGISTRO_RECURSO_RONDA para auditoría
 --   5. Evita duplicados verificando si ya se registró producción en esta ronda
---
--- Parámetros:
---   - p_codigo_partida: Identificador de la partida
---   - p_id_ronda: ID de la ronda actual
---   - p_numero_ronda: Número de la ronda (para verificar si es múltiplo de 10)
 
 CREATE OR REPLACE PROCEDURE proc_producir_pbn(
     p_codigo_partida IN VARCHAR2,
     p_id_ronda       IN NUMBER,
     p_numero_ronda   IN NUMBER
 ) AS
-    -- Constante: cantidad fija de PBN que se produce cada 10 rondas
     c_pbn_producir CONSTANT NUMBER := 10000;
 
     -- Cursor que obtiene todos los países con recurso PBN en la partida
@@ -332,14 +299,12 @@ CREATE OR REPLACE PROCEDURE proc_producir_pbn(
           ON r.id_recurso     = rp.id_recurso
          AND r.codigo_partida = rp.codigo_partida
         WHERE p.codigo_partida = p_codigo_partida
-          AND rp.tipo_recurso = 'pbn';  -- Solo recursos de tipo PBN
+          AND rp.tipo_recurso = 'pbn';  
 BEGIN
-    -- Solo aplica cada 10 rondas (checkpoints: 10, 20, 30, etc.)
     IF MOD(p_numero_ronda, 10) != 0 THEN
-        RETURN;  -- Sale del procedimiento si no es ronda de checkpoint
+        RETURN;  
     END IF;
 
-    -- Procesa cada país con PBN
     FOR rec IN cur_paises_pbn LOOP
         -- Verificar si ya se registró producción de PBN para este país en esta ronda
         DECLARE
@@ -427,16 +392,9 @@ END;
 -- =====================================================
 -- RESTRICCIONES 5, 6, 7: CONSUMO OBLIGATORIO DE PBN
 -- =====================================================
--- Regla de negocio: Cada país debe consumir un mínimo de 2.000 unidades
--- de PBN cada 10 rondas. Si no cumple con este consumo mínimo, se genera
--- una deuda con un recargo del 50% sobre la cantidad faltante.
---
 -- Restricción 5: Define el consumo mínimo obligatorio de PBN
 -- Restricción 6: Genera deuda si el consumo es insuficiente
 -- Restricción 7: Aplica recargo del 50% sobre la deuda generada
---
--- Implementación: Procedimiento almacenado que se ejecuta al finalizar
--- una ronda, pero solo procesa si es una ronda múltiplo de 10 (checkpoint).
 --
 -- Lógica:
 --   1. Verifica si la ronda actual es múltiplo de 10
@@ -445,22 +403,15 @@ END;
 --      - Calcula la deuda como: (2000 - consumo_real) * 1.5 (50% de recargo)
 --      - Registra la deuda en REGISTRO_RECURSO_RONDA
 --   4. Si el consumo es suficiente, no se genera deuda
---
--- Parámetros:
---   - p_codigo_partida: Identificador de la partida
---   - p_id_ronda: ID de la ronda actual
---   - p_numero_ronda: Número de la ronda (para verificar si es múltiplo de 10)
 
 CREATE OR REPLACE PROCEDURE proc_validar_consumo_pbn(
     p_codigo_partida IN VARCHAR2,
     p_id_ronda       IN NUMBER,
     p_numero_ronda   IN NUMBER
 ) AS
-    -- Constante: consumo mínimo obligatorio de PBN cada 10 rondas
     c_consumo_min CONSTANT NUMBER := 2000;  
     v_numero_desde NUMBER;
 BEGIN
-    -- Solo valida cada 10 rondas (checkpoints: 10, 20, 30, etc.)
     IF MOD(p_numero_ronda, 10) != 0 THEN
         RETURN;  -- Sale del procedimiento si no es ronda de checkpoint
     END IF;
@@ -500,7 +451,6 @@ BEGIN
 
                 EXCEPTION
                     WHEN NO_DATA_FOUND THEN
-                        -- Si no tiene PBN, el consumo es 0 (generará deuda máxima)
                         v_id_recurso := NULL;
                 END;
 
@@ -560,13 +510,6 @@ END;
 -- =====================================================
 -- RESTRICCIÓN 8: VALIDACIÓN DE RECURSOS PARA CONSTRUCCIÓN
 -- =====================================================
--- Regla de negocio: Antes de registrar el costo inicial de una construcción,
--- el país debe tener suficientes recursos disponibles. Si tiene los recursos,
--- se descuentan automáticamente al registrar el costo.
---
--- Implementación: Trigger BEFORE INSERT que se ejecuta antes de insertar
--- un registro en CONSTRUCCION_COSTO_INICIAL.
---
 -- Lógica:
 --   1. Verifica que el recurso exista para el país
 --   2. Compara la cantidad disponible con la cantidad requerida
@@ -621,13 +564,6 @@ END;
 -- =====================================================
 -- RESTRICCIÓN 9: UNICIDAD DE CONSTRUCCIONES POR TIPO
 -- =====================================================
--- Regla de negocio: Un país no puede tener más de una construcción
--- del mismo tipo en una misma partida. Por ejemplo, solo puede tener
--- una usina, una represa, etc.
---
--- Implementación: Trigger BEFORE INSERT que se ejecuta antes de insertar
--- un registro en CONSTRUCCION.
---
 -- Lógica:
 --   1. Cuenta cuántas construcciones del mismo tipo tiene el país
 --   2. Si ya tiene una, aborta la inserción con un error
@@ -661,21 +597,11 @@ END;
 -- =====================================================
 -- RESTRICCIÓN 10: CAPACIDAD DE TRANSPORTE EN COMERCIO
 -- =====================================================
--- Regla de negocio: La cantidad total de recursos asignados a un comercio
--- (suma de ENVIO y RECEPCION) no puede superar la capacidad máxima
--- del medio de transporte utilizado.
---
--- Implementación: Trigger BEFORE INSERT que se ejecuta antes de insertar
--- un registro en COMERCIO_RECURSO.
---
 -- Lógica:
 --   1. Obtiene la capacidad máxima del medio de transporte del comercio
 --   2. Suma todas las cantidades ya asignadas al comercio (incluyendo la nueva)
 --   3. Si la suma excede la capacidad, aborta la operación
 --   4. Si no excede, permite la inserción
---
--- IMPORTANTE: Este trigger debe ejecutarse ANTES del trigger que descuenta
--- recursos, para validar la capacidad antes de modificar los recursos.
 
 CREATE OR REPLACE TRIGGER trg_01_verificar_capacidad_comercio
 BEFORE INSERT ON COMERCIO_RECURSO
@@ -716,18 +642,12 @@ END;
 -- =====================================================
 -- RESTRICCIONES 11, 12, 13, 14: CONSUMO BÁSICO Y ELIMINACIÓN
 -- =====================================================
--- Regla de negocio: Cada país debe consumir un mínimo de alimentos y energía
--- cada 10 rondas. Si no cumple con estos consumos básicos, se genera deuda.
--- Si un país incumple más de 2 veces consecutivas, es eliminado de la partida.
 --
 -- Restricción 11: Define el consumo mínimo obligatorio de alimentos
 -- Restricción 12: Define el consumo mínimo obligatorio de energía
 -- Restricción 13: Genera deuda si el consumo es insuficiente (con recargo del 50%)
 -- Restricción 14: Elimina el país si tiene más de 2 incumplimientos consecutivos
---
--- Implementación: Procedimiento almacenado que se ejecuta al finalizar
--- una ronda, pero solo procesa si es una ronda múltiplo de 10 (checkpoint).
---
+
 -- Lógica:
 --   1. Identifica los recursos de tipo "consumo" que son alimentos y energía
 --   2. Para cada país, calcula el consumo de alimentos y energía en las últimas 10 rondas
@@ -737,30 +657,22 @@ END;
 --   4. Si un país tiene más de 2 incumplimientos consecutivos en alimentos O energía:
 --      - Lo elimina de la partida (elimina de PARTIDA_JUGADOR)
 --      - Registra el evento en REGISTRO_RECURSO_RONDA
---
--- Parámetros:
---   - p_codigo_partida: Identificador de la partida
---   - p_id_ronda: ID de la ronda actual
---   - p_numero_ronda: Número de la ronda (para verificar si es múltiplo de 10)
 
 CREATE OR REPLACE PROCEDURE proc_validar_consumo_basico(
     p_codigo_partida IN VARCHAR2,
     p_id_ronda       IN NUMBER,
     p_numero_ronda   IN NUMBER
 ) AS
-    -- Constantes: consumo mínimo requerido cada 10 rondas
-    c_req_alimentos CONSTANT NUMBER := 5000; -- Mínimo de alimentos requerido
-    c_req_energia   CONSTANT NUMBER := 3000; -- Mínimo de energía requerido
+    c_req_alimentos CONSTANT NUMBER := 5000;
+    c_req_energia   CONSTANT NUMBER := 3000; 
 
     v_numero_desde NUMBER;
 
-    -- IDs de los recursos de tipo consumo (alimentos y energía)
     v_id_rt_ali  RECURSOS_PARTIDA.id_recurso%TYPE;
     v_id_rt_ene  RECURSOS_PARTIDA.id_recurso%TYPE;
 BEGIN
-    -- Solo valida cada 10 rondas (checkpoints: 10, 20, 30, etc.)
     IF MOD(p_numero_ronda, 10) != 0 THEN
-        RETURN;  -- Sale del procedimiento si no es ronda de checkpoint
+        RETURN;  
     END IF;
 
     -- Calcula desde qué ronda empezar a contar (últimas 10 rondas)
@@ -789,6 +701,7 @@ BEGIN
           AND tipo_recurso = 'consumo'
           AND (UPPER(nombre) LIKE '%kW%' OR UPPER(nombre) LIKE '%ENERGIA%' OR UPPER(nombre) LIKE '%ENERG%')
         AND ROWNUM = 1;  -- Toma el primero que encuentre
+        -- KW es kilovatio, la unidad de potencia que mide la cantidad de energia
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
             v_id_rt_ene := NULL;  -- Si no encuentra, no valida energía
@@ -1013,22 +926,10 @@ END;
 -- =====================================================
 -- RESTRICCIÓN 13: VALIDACIÓN DE LOGROS
 -- =====================================================
--- Regla de negocio: Un país solo puede alcanzar un logro si cumple
--- condiciones específicas. En este caso, se valida que:
---   1. El país exista en la partida
---   2. La recompensa del logro no esté vacía
---
--- Implementación: Trigger BEFORE INSERT que se ejecuta antes de insertar
--- un registro en LOGRO.
---
 -- Lógica:
 --   1. Verifica que el país exista en la partida
 --   2. Valida que la recompensa no esté vacía o sea NULL
 --   3. Si alguna validación falla, aborta la inserción con un error
---
--- Nota: Este trigger puede extenderse para validar otras condiciones
---       específicas de cada logro (por ejemplo, cantidad de recursos,
---       construcciones completadas, etc.)
 
 CREATE OR REPLACE TRIGGER trg_validar_logro
 BEFORE INSERT ON LOGRO
@@ -1052,7 +953,6 @@ BEGIN
     END IF;
 
     -- Valida que la recompensa no esté vacía o sea NULL
-    -- Nota: recompensa es VARCHAR2 en el DDL, se valida que no sea NULL o vacío
     IF :NEW.recompensa IS NULL OR LENGTH(TRIM(:NEW.recompensa)) = 0 THEN
         RAISE_APPLICATION_ERROR(
             -20061,
@@ -1066,14 +966,7 @@ END;
 -- =====================================================
 -- PROCEDIMIENTO DE GESTIÓN DE RONDA: FINALIZAR RONDA
 -- =====================================================
--- Este procedimiento centraliza todas las operaciones que deben
--- ejecutarse al finalizar una ronda del juego. Coordina la ejecución
--- de todas las restricciones y validaciones automáticas.
---
--- Parámetros:
---   - p_codigo_partida: Identificador de la partida
---   - p_id_ronda: ID de la ronda que se está finalizando
---
+
 -- Flujo de ejecución:
 --   1. Obtiene el número de la ronda
 --   2. Producción automática de construcciones (Restricción 3)
@@ -1154,11 +1047,6 @@ END;
 -- =====================================================
 -- PROCEDIMIENTO DE GESTIÓN DE RONDA: INICIAR RONDA
 -- =====================================================
--- Este procedimiento crea una nueva ronda y aplica las suspensiones
--- de producción que fueron marcadas en la ronda anterior por sobreproducción.
---
--- Parámetros:
---   - p_codigo_partida: Identificador de la partida
 --
 -- Flujo de ejecución:
 --   1. Calcula el número de la nueva ronda (siguiente al máximo existente)
@@ -1166,10 +1054,6 @@ END;
 --   3. Crea el registro de la nueva ronda con fecha_inicio = SYSDATE
 --   4. Identifica recursos con producción suspendida de la ronda anterior
 --   5. Muestra advertencias sobre suspensiones activas
---
--- Nota: Las suspensiones se aplican automáticamente por el trigger
---       trg_verificar_sobreproduccion cuando se intenta producir
---       en la nueva ronda.
 
 CREATE OR REPLACE PROCEDURE proc_iniciar_ronda(
     p_codigo_partida IN VARCHAR2
