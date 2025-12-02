@@ -109,8 +109,6 @@ BEGIN
     END IF;
 EXCEPTION
     WHEN NO_DATA_FOUND THEN
-        -- Si no existe el recurso en RECURSOS_PARTIDA, no se valida
-        -- (permite flexibilidad en casos especiales)
         NULL;
 END;
 /
